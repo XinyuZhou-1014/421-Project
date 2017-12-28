@@ -5,16 +5,6 @@ type lam =
 
 type expr = One of lam | Two of lam * lam
 
-let rec string_of_lambda lambda tm =
-    (match tm with VarLam s -> s
-     | AbsLam (s,e) -> lambda^" "^s^". "^(string_of_lambda lambda e)
-     | AppLam (rator, rand) ->
-       (match rator
-        with AbsLam (_,_) -> "("^(string_of_lambda lambda rator)^")"
-         | _ -> string_of_lambda lambda rator) ^ " " ^
-       (match rand with VarLam s -> s
-         | _ ->  "("^(string_of_lambda lambda rand)^")"))
-
 type binding_relation = 
   | Bind of int * int list 
   | Free of int * int list
@@ -107,4 +97,41 @@ let get_binding_relation tm =
   let env = (0, [], []) in
   match get_binding_relation_helper tm env with
   | (_, bind_list, _) -> bind_list
+
+
+(* utils *)
+open Printf;;
+
+let rec string_of_lambda lambda tm =
+    (match tm with VarLam s -> s
+     | AbsLam (s,e) -> lambda^" "^s^". "^(string_of_lambda lambda e)
+     | AppLam (rator, rand) ->
+       (match rator
+        with AbsLam (_,_) -> "("^(string_of_lambda lambda rator)^")"
+         | _ -> string_of_lambda lambda rator) ^ " " ^
+       (match rand with VarLam s -> s
+         | _ ->  "("^(string_of_lambda lambda rand)^")"))
+
+let rec print_binding_rel bind_list = 
+  match bind_list with 
+  | [] -> print_endline ""
+  | (Bind(n, lst))::xs -> print_string ("Bind(" ^ (string_of_int n) ^ ", ["); 
+                    List.iter (printf "%d ") lst;
+                    print_string "]), ";
+                    print_binding_rel xs
+  | (Free(n, lst))::xs -> print_string ("Free(" ^ (string_of_int n) ^ ", ["); 
+                    List.iter (printf "%d ") lst;
+                    print_string "]), ";
+                    print_binding_rel xs
+
+let rec string_of_lambda_by_type tm = 
+    (match tm with VarLam s -> s
+     | AbsLam (s,e) -> "Abs(" ^ s ^ ", " ^ (string_of_lambda_by_type e) ^ ")"
+     | AppLam (rator, rand) -> "App" ^
+       (match rator
+        with AbsLam (_,_) -> "("^(string_of_lambda_by_type rator)^")"
+         | _ -> string_of_lambda_by_type rator) ^ " " ^
+       (match rand with VarLam s -> s
+         | _ ->  "("^(string_of_lambda_by_type rand)^")"))
+
 
