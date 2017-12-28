@@ -17,8 +17,6 @@ rule token = parse
   | "("             { LPAR }
   | ")"             { RPAR }
   |  (alpha (id_char*)) as s     { IDENT s }
-  | "=a="          { ALPHA }
-  | "-B->"          { BETA }
-
+  | "~a~"           { ALPHA }
 {
 }

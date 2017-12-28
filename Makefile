@@ -1,0 +1,39 @@
+OCAMLC=ocamlc
+OCAMLLEX=ocamllex
+OCAMLYACC=ocamlyacc 
+OBJLANG=lambda
+SOURCE=lambdaTest
+INTERACTIVE_EXE=LambdaTest
+RM=rm
+
+all: $(INTERACTIVE_EXE)
+
+#$(INTERACTIVE_EXE): utils.cmo lambda.cmo lambda_parse.cmo lambda_lex.cmo lambdaChecker.cmo $(SOURCE).ml
+$(INTERACTIVE_EXE): lambda.cmo lambda_parse.cmo lambda_lex.cmo $(SOURCE).ml
+	$(OCAMLC) -c $(SOURCE).ml
+#	$(OCAMLC) -o $(INTERACTIVE_EXE) utils.cmo lambda.cmo lambda_parse.cmo lambda_lex.cmo lambdaChecker.cmo $(SOURCE).cmo 
+	$(OCAMLC) -o $(INTERACTIVE_EXE) lambda.cmo lambda_parse.cmo lambda_lex.cmo $(SOURCE).cmo 
+
+#lambdaChecker.cmo: utils.cmo lambda.cmo lambda_parse.cmo lambda_lex.cmo
+#	$(OCAMLC) -c lambdaChecker.ml
+
+lambda_parse.cmo: lambda_parse.mly lambda.cmo 
+	$(OCAMLYACC) lambda_parse.mly
+	$(OCAMLC) -c lambda_parse.mli
+	$(OCAMLC) -c lambda_parse.ml
+
+lambda_lex.cmo: lambda_lex.mll lambda_parse.cmo
+	$(OCAMLLEX) lambda_lex.mll
+	$(OCAMLC) -c lambda_lex.ml
+
+#lambda.cmo: lambda.ml utils.cmo
+lambda.cmo: lambda.ml
+	$(OCAMLC) -c lambda.ml
+
+#utils.cmo: utils.ml
+#	$(OCAMLC) -c utils.ml
+
+clean:
+	$(RM) *.cm? lambda_lex.ml lambda_parse.ml lambda_parse.mli LambdaTest
+			
+
