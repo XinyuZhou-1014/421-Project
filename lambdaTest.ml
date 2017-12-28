@@ -16,6 +16,7 @@ let rec loop () =
      print_endline (string_of_lambda "%" tm2);
      loop()
      | One tm -> print_endline (string_of_lambda "%" tm);
+                 Lambda.get_binding_relation tm;
      loop()
      )
 
