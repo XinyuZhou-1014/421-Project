@@ -1,12 +1,9 @@
-
-type tag = Alpha 
-
 type lam = 
   | VarLam of string
   | AbsLam of string * lam
   | AppLam of lam * lam
 
-type expr = One of lam | Two of lam * tag * lam
+type expr = One of lam | Two of lam * lam
 
 let rec string_of_lambda lambda tm =
     (match tm with VarLam s -> s
@@ -17,3 +14,4 @@ let rec string_of_lambda lambda tm =
          | _ -> string_of_lambda lambda rator) ^ " " ^
        (match rand with VarLam s -> s
          | _ ->  "("^(string_of_lambda lambda rand)^")"))
+

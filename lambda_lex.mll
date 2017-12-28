@@ -12,6 +12,7 @@ let whitespace = [' ' '\t' '\n']
 rule token = parse
   | whitespace      { token lexbuf }  (* skip over whitespace *)
   | eof             { EOF }
+  | ";;"            { DSEMI }
   | "%"             { LAMBDA }
   | "."             { DOT }
   | "("             { LPAR }

@@ -5,17 +5,17 @@ open Lambda;;
 %}
 
 %token <string> IDENT
-%token LAMBDA DOT LPAR RPAR ALPHA EOF
+%token LAMBDA DOT LPAR RPAR ALPHA EOF DSEMI
 
-%start exp input
+%start input
 %type <Lambda.lam> exp
 %type <Lambda.expr> input
 
 %%
 
 input:
-|  exp                             { print_string "!"; One $1 }  
-| exp ALPHA exp EOF               { print_string "!!"; Two($1, Alpha, $3) }
+| exp DSEMI                         { One $1 }  
+| exp ALPHA exp DSEMI               { Two($1, $3) }
 
 exp:
 |  no_abs no_app                   { AppLam($1,$2) }
