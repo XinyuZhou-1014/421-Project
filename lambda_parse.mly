@@ -14,11 +14,15 @@ open Lambda;;
 %%
 
 input:
-| exp DSEMI                         { One $1 }  
-| exp ALPHA exp DSEMI               { Two($1, $3) }
+| exp_no_eof                      { $1 }
+| exp_no_eof DSEMI                { $1 }
+
+exp_no_eof: 
+| exp                             { One $1 }  
+| exp ALPHA exp                   { Two($1, $3) }
 
 exp:
-|  no_abs no_app                   { AppLam($1,$2) }
+| no_abs no_app                   { AppLam($1,$2) }
 | no_app                          { $1 }
 
 no_abs:
