@@ -29,6 +29,9 @@ let _ =
   let op = LeftConvOp in
   let str1 = "(%x.x (%y.y x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;" in
   let str2 = "(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;" in
+  print_endline str1; 
+  Match_operation.print_op op;
+  print_endline str2;
   let res = legal_onestep op [str1] [str2] in
   Match_operation.print_error res
 

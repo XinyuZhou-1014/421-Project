@@ -1,0 +1,59 @@
+(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;
+LeftConvOp
+(%x.x (%y.y x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;
+Correct
+
+(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;
+LeftConvOp
+(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;
+AlphaConvNotChange
+
+(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;
+RightConvOp
+(%x.x (%w.w x z) w x z) x ~a~ (%a.a(%b.b a z) w a z) x;;
+AlphaConvChangeTooMany
+
+(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;
+LeftConvOp
+(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%a.a y z) w y z) x;;
+LeftConvRightNotSame
+
+(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;
+RightConvOp
+(%x.x (%w.w x z) w x z) x ~a~ (%a.a(%w.w y z) w a z) x;;
+AlphaConvWrong
+
+(%x.x (%w.w x z) w x z) ~a~ (%x.x(%a.a x z) w x z);;
+AbsOp
+x (%w.w x z) w x z ~a~ x (%a.a x z) w x z;;
+Correct
+
+(%x.x (%w.w x z) w x z) ~a~ (%y.y(%a.a x z) w y z);;
+AbsOp
+x (%w.w x z) w x z ~a~ y (%a.a y z) w y z;;
+LambdaTermNotSame
+
+(%x.x (%w.w x z) w x z) ~a~ (%x.x(%a.a x z) w x z);;
+AbsOp
+x (%w.w x z) w x z ~a~ x (%a.a x z) w y z;;
+AbsRewriteWrong
+
+(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;
+LeftAppOp
+(%x.x (%w.w x z) w x z) ~a~ (%y.y(%w.w y z) w y z);;
+Correct
+
+(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;
+RightAppOp
+(%x.x (%w.w x z) w x z) ~a~ (%y.y(%w.w y z) w y z);;
+IllegalOperation
+
+(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;
+LeftAppOp
+(%x.x (%w.w x z) w x z) ~a~ (%a.a(%w.w y z) w a z);;
+AppLeftRewriteWrong
+
+(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x;;
+RightAppOp
+x ~a~ x;;
+RightAppLeftNotSame

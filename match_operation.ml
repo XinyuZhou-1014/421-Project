@@ -54,9 +54,9 @@ type operation =
   | RightConvOp
   | AbsOp
   | AppOp
-  (* sugar *)
   | LeftAppOp
   | RightAppOp
+  | UnknownOp
 
 type error = 
   | NoError
@@ -226,9 +226,31 @@ let legal_onestep op before_list after_list =
   | AppOp       -> legal_app        before_list after_list 
   | LeftAppOp   -> legal_left_app   before_list after_list 
   | RightAppOp  -> legal_right_app  before_list after_list 
+  | UnknownOp   -> raise(Failure("Invalid Operation")) 
 
+let str_2_op op_str = 
+  match op_str with
+  | "LeftConvOp"  -> LeftConvOp
+  | "RightConvOp" -> RightConvOp
+  | "AbsOp"       -> AbsOp
+  | "AppOp"       -> AppOp
+  | "LeftAppOp"   -> LeftAppOp
+  | "RightAppOp"  -> RightAppOp
+  | _ -> UnknownOp
 
-let print_error error = print_string 
+let print_op op = print_endline
+(match op with
+  | LeftConvOp -> "Left Alpha Conv"
+  | RightConvOp -> "Right Alpha Conv"
+  | AbsOp -> "Abstraction"
+  | AppOp -> "Application on both side"
+  (* sugar *)
+  | LeftAppOp -> "Left Application"
+  | RightAppOp -> "Right Application"
+  | UnknownOp -> "Unknown"
+)
+
+let print_error error = print_endline
 (match error with
   | NoError -> "Correct"
   | NotImplemented -> "Not implemented branch"
