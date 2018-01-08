@@ -9,10 +9,10 @@ RM=rm
 all: $(INTERACTIVE_EXE)
 
 #$(INTERACTIVE_EXE): utils.cmo lambda.cmo lambda_parse.cmo lambda_lex.cmo lambdaChecker.cmo $(SOURCE).ml
-$(INTERACTIVE_EXE): lambda.cmo lambda_parse.cmo lambda_lex.cmo $(SOURCE).ml
+$(INTERACTIVE_EXE): lambda.cmo lambda_parse.cmo lambda_lex.cmo match_operation.cmo $(SOURCE).ml
 	$(OCAMLC) -c $(SOURCE).ml
 #	$(OCAMLC) -o $(INTERACTIVE_EXE) utils.cmo lambda.cmo lambda_parse.cmo lambda_lex.cmo lambdaChecker.cmo $(SOURCE).cmo 
-	$(OCAMLC) -o $(INTERACTIVE_EXE) lambda.cmo lambda_parse.cmo lambda_lex.cmo $(SOURCE).cmo 
+	$(OCAMLC) -o $(INTERACTIVE_EXE) lambda.cmo lambda_parse.cmo lambda_lex.cmo match_operation.cmo $(SOURCE).cmo 
 
 #lambdaChecker.cmo: utils.cmo lambda.cmo lambda_parse.cmo lambda_lex.cmo
 #	$(OCAMLC) -c lambdaChecker.ml
@@ -29,6 +29,9 @@ lambda_lex.cmo: lambda_lex.mll lambda_parse.cmo
 #lambda.cmo: lambda.ml utils.cmo
 lambda.cmo: lambda.ml
 	$(OCAMLC) -c lambda.ml
+
+match_operation.cmo: match_operation.ml
+	$(OCAMLC) -c match_operation.ml
 
 #utils.cmo: utils.ml
 #	$(OCAMLC) -c utils.ml

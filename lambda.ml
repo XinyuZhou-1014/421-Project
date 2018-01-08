@@ -1,3 +1,13 @@
+open Printf;;
+
+let print_map map = 
+  print_string "[";
+  List.iter (fun (a, b) -> 
+    print_string ("(" ^ a ^ "->"); 
+    print_string ((string_of_int b) ^ "), ")
+  ) map;
+  print_endline "]"
+
 type lam = 
   | VarLam of string
   | AbsLam of string * lam
@@ -6,10 +16,10 @@ type lam =
 type expr = One of lam | Two of lam * lam
 
 type binding_relation = 
-  | Bind of int * int list 
-  | Free of int * int list
+  | Bind of int * int list * string
+  | Free of int * string
   (* for bind, lead int is binder; 
-   * for free, lead int is marker for easy search *)
+   * for free, simply record position and string *)
 
 
 (* 
@@ -26,30 +36,29 @@ let rec find_in_map map var =
 
 let update_map map var counter = (var, counter) :: map
 
-let add_binding_in_binding_rel bind_list counter = 
-  bind_list @ [Bind(counter, [])]
+let add_binding_in_binding_rel bind_list counter str = 
+  bind_list @ [Bind(counter, [], str)]
 (* only binding var call this *)
 
-let add_newfree_in_binding_rel bind_list counter = 
-  bind_list @ [Free(counter, [])]
+let add_newfree_in_binding_rel bind_list counter str = 
+  bind_list @ [Free(counter, str)]
 
 let update_binding_rel bind_list counter int_of_var = 
   let rec helper left right counter int_of_var =  
     match right with 
     | [] -> raise (Failure "This should not happen")
-    | (Bind(n, lst)) :: xs -> 
-        if n = int_of_var then left @ [Bind(n, lst @ [counter])] @ xs
-        else helper (left @ [Bind(n, lst)]) xs counter int_of_var 
-    | (Free(n, lst)) :: xs -> 
-        if n = int_of_var then left @ [Free(n, lst @ [counter])] @ xs
-        else helper (left @ [Free(n, lst)]) xs counter int_of_var 
+    | (Bind(n, lst, str)) :: xs -> 
+        if n = int_of_var then left @ [Bind(n, lst @ [counter], str)] @ xs
+        else helper (left @ [Bind(n, lst, str)]) xs counter int_of_var 
+    | (Free(n, s)) :: xs -> 
+        helper (left @ [Free(n, s)]) xs counter int_of_var 
   in helper [] bind_list counter int_of_var
 
 let add_new_lambda_var env var =
   match env with (counter, bind_list, map) ->
     let new_counter = counter + 1 in
     let new_map = update_map map var new_counter in
-    let new_bind_list = add_binding_in_binding_rel bind_list new_counter in
+    let new_bind_list = add_binding_in_binding_rel bind_list new_counter var in
     (new_counter, new_bind_list, new_map)
 
 let add_new_var env var = 
@@ -58,14 +67,15 @@ let add_new_var env var =
     let int_of_var_op = find_in_map map var in
     (match int_of_var_op with 
     | None -> (* new free *)
-        let new_bind_list = add_newfree_in_binding_rel bind_list new_counter in
+        let new_bind_list = add_newfree_in_binding_rel bind_list new_counter var in
         let new_map = update_map map var new_counter in
-        (new_counter, new_bind_list, new_map) 
+        (new_counter, new_bind_list, new_map)
     | Some int_of_var -> (* bounded *)
         let new_bind_list = update_binding_rel bind_list new_counter int_of_var in
         let new_map = map in
         (new_counter, new_bind_list, new_map)
     )
+
 
 
 let rec get_binding_relation_helper tm env =
@@ -93,15 +103,15 @@ let rec get_binding_relation_helper tm env =
          )
     )
 
+
+
 let get_binding_relation tm = 
   let env = (0, [], []) in
   match get_binding_relation_helper tm env with
-  | (_, bind_list, _) -> bind_list
+  | (_, bind_list, map) -> bind_list
 
 
-(* utils *)
-open Printf;;
-
+(* utils*)
 let rec string_of_lambda lambda tm =
     (match tm with VarLam s -> s
      | AbsLam (s,e) -> lambda^" "^s^". "^(string_of_lambda lambda e)
@@ -115,13 +125,13 @@ let rec string_of_lambda lambda tm =
 let rec print_binding_rel bind_list = 
   match bind_list with 
   | [] -> print_endline ""
-  | (Bind(n, lst))::xs -> print_string ("Bind(" ^ (string_of_int n) ^ ", ["); 
+  | (Bind(n, lst, str))::xs -> print_string ("Bind(" ^ (string_of_int n) ^ ", ["); 
                     List.iter (printf "%d ") lst;
-                    print_string "]), ";
+                    print_string ("], " ^ str ^ "), ");
                     print_binding_rel xs
-  | (Free(n, lst))::xs -> print_string ("Free(" ^ (string_of_int n) ^ ", ["); 
-                    List.iter (printf "%d ") lst;
-                    print_string "]), ";
+  | (Free(n, s))::xs -> print_string ("Free(" ^ (string_of_int n) ^ ", "); 
+                    print_string s;
+                    print_string "), ";
                     print_binding_rel xs
 
 let rec string_of_lambda_by_type tm = 
