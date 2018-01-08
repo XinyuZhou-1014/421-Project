@@ -49,8 +49,13 @@ let () =
         print_endline "";
         loop ()
       
-      with e ->                      
-        close_in_noerr ic;           
-        raise e                      
+      with e -> 
+        match e with
+        | End_of_file -> 
+            close_in_noerr ic; 
+            print_endline "Finish." 
+        | _ -> 
+          close_in_noerr ic;           
+          raise e                      
   in loop ()
 
