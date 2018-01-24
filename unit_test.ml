@@ -34,7 +34,7 @@ let file = "example.txt"
   
 let () =   
   print_endline "";
-  let is_silent = true in
+  let is_silent = false in
   let ic = open_in file in
     let rec loop () = 
       try 
@@ -44,8 +44,9 @@ let () =
         let expect_res = input_line ic in
         let skiped_line = input_line ic in
         let op = Match_operation.str_2_op op_str in
+        print_string "Result: "; 
         test_onestep str1 op str2 is_silent; 
-        print_endline expect_res;
+        print_endline ("Expected: " ^ expect_res);
         print_endline "";
         loop ()
       
