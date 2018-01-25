@@ -5,26 +5,7 @@
 
 open Lambda
 open Lambda_parse
-open Match_operation
-
-(*
-let str = "(% x. y % y. y (% x. x y) x) x;;";;
-print_endline str;;
-
-let _ = 
-  let test = 
-    Lambda_parse.input Lambda_lex.token 
-    (Lexing.from_string str)
-  in 
-  match test with
-  | One lam -> 
-      Lambda.print_binding_rel (Lambda.get_binding_relation lam)
-  | Two (lam1, lam2) -> 
-      Lambda.print_binding_rel (Lambda.get_binding_relation lam1);
-      print_endline "~a~";
-      Lambda.print_binding_rel (Lambda.get_binding_relation lam2)
-*)
-
+open Match_rule
 
 
 let rec loop () =
@@ -47,14 +28,14 @@ let _ =
   print_endline "\nWelcome to the Alpha Equivalence One-Step Evaluator"; 
   print_endline "Example: ";
   
-  let op = LeftConvOp in
+  let rule = LeftConvRule in
   let str1 = "(%x.x (%y.y x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x" in
   let str2 = "(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x" in
   print_endline str1; 
-  Match_operation.print_op op;
+  Match_rule.print_rule rule;
   print_endline str2;
-  let res = legal_onestep op [str1] [str2] in
-  Match_operation.print_error res;
+  let res = legal_onestep rule [str1] [str2] in
+  Match_rule.print_error res;
   
   loop()
   )

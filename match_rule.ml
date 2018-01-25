@@ -49,21 +49,21 @@ let can_abs lam = match lam with AbsLam _ -> true | _ -> false
 let can_app lam = match lam with AppLam _ -> true | _ -> false
 
 
-type operation = 
-  | LeftConvOp
-  | RightConvOp
-  | AbsOp
-  | AppOp
-  | LeftAppOp
-  | RightAppOp
-  | UnknownOp
+type rule =
+  | LeftConvRule
+  | RightConvRule
+  | AbsRule
+  | AppRule
+  | LeftAppRule
+  | RightAppRule
+  | UnknownRule
 
 type error = 
   | NoError
   | NotImplemented
   | NotParseError (* how to raise? *)
   | UndefinedError
-  | IllegalOperation
+  | WrongRule
 
   | LeftConvRightNotSame
   | RightConvLeftNotSame
@@ -95,10 +95,10 @@ let parse_exp str =
 
 
 (* 
- * op: type of operation
+ * rule: type of Rule
  * before_list: have only one element, i.e. "left ~a~ right" string
  * after_list: have one or two elements, each element is a "left ~a~ right" string
- * ops:
+ * rules:
    * a_conv: 1 -> 1
    * abs: 1 -> 1 (lambda term should be equal)
    * app: 1 -> 2
@@ -119,7 +119,7 @@ let legal_left_conv before_list after_list =
   | (before::[], after::[]) ->
       (match (parse_exp before, parse_exp after) with
       | ((lb, rb), (la, ra)) ->
-               if not (can_alpha_conv lb) then IllegalOperation
+               if not (can_alpha_conv lb) then WrongRule
           else if not (same_lambda rb ra) then LeftConvRightNotSame 
           else is_alpha_conversion lb la
       | (_, _) -> NotImplemented (* One *)
@@ -131,7 +131,7 @@ let legal_right_conv before_list after_list =
   | (before::[], after::[]) ->
       (match (parse_exp before, parse_exp after) with
       | ((lb, rb), (la, ra)) ->
-               if not (can_alpha_conv rb) then IllegalOperation 
+               if not (can_alpha_conv rb) then WrongRule 
           else if not (same_lambda lb la) then RightConvLeftNotSame 
           else is_alpha_conversion rb ra
       | (_, _) -> NotImplemented (* One *)
@@ -146,14 +146,14 @@ let legal_abs_helper lb rb la ra =
       else if not (same_lambda e_lb la) then AbsRewriteWrong 
       else if not (same_lambda e_rb ra) then AbsRewriteWrong
       else NoError
-  | _ -> IllegalOperation 
+  | _ -> WrongRule 
 
 let legal_abs before_list after_list = 
   match (before_list, after_list) with
   | (before::[], after::[]) ->
       (match (parse_exp before, parse_exp after) with
       | ((lb, rb), (la, ra)) -> 
-          if not (can_abs lb) then IllegalOperation
+          if not (can_abs lb) then WrongRule
           else legal_abs_helper lb rb la ra 
       | (_, _) -> NotImplemented (* One *)
       )
@@ -168,7 +168,7 @@ let legal_app_helper lb rb la1 ra1 la2 ra2 =
       else if not (same_lambda e1_rb ra1) then AppRightRewriteWrong
       else if not (same_lambda e2_rb ra2) then AppRightRewriteWrong
       else NoError 
-  | _ -> IllegalOperation 
+  | _ -> WrongRule 
 
 let legal_app before_list after_list = 
   match (before_list, after_list) with
@@ -187,7 +187,7 @@ let legal_left_app_helper lb rb la ra =
       else if not (same_lambda e1_rb ra) then AppLeftRewriteWrong
       else if not (same_lambda e2_lb e2_rb) then LeftAppRightNotSame
       else NoError 
-  | _ -> IllegalOperation 
+  | _ -> WrongRule 
 
 let legal_left_app before_list after_list = 
   match (before_list, after_list) with
@@ -206,7 +206,7 @@ let legal_right_app_helper lb rb la ra =
       else if not (same_lambda e2_rb ra) then AppRightRewriteWrong
       else if not (same_lambda e1_lb e1_rb) then RightAppLeftNotSame
       else NoError 
-  | _ -> IllegalOperation 
+  | _ -> WrongRule 
 
 let legal_right_app before_list after_list = 
   match (before_list, after_list) with
@@ -218,36 +218,36 @@ let legal_right_app before_list after_list =
       )
   | _ -> NotImplemented (* num uplineterms *)
 
-let legal_onestep op before_list after_list = 
-  match op with
-  | LeftConvOp  -> legal_left_conv  before_list after_list
-  | RightConvOp -> legal_right_conv before_list after_list 
-  | AbsOp       -> legal_abs        before_list after_list 
-  | AppOp       -> legal_app        before_list after_list 
-  | LeftAppOp   -> legal_left_app   before_list after_list 
-  | RightAppOp  -> legal_right_app  before_list after_list 
-  | UnknownOp   -> raise(Failure("Invalid Operation")) 
+let legal_onestep rule before_list after_list = 
+  match rule with
+  | LeftConvRule  -> legal_left_conv  before_list after_list
+  | RightConvRule -> legal_right_conv before_list after_list 
+  | AbsRule       -> legal_abs        before_list after_list 
+  | AppRule       -> legal_app        before_list after_list 
+  | LeftAppRule   -> legal_left_app   before_list after_list 
+  | RightAppRule  -> legal_right_app  before_list after_list 
+  | UnknownRule   -> raise(Failure("Invalid Rule")) 
 
-let str_2_op op_str = 
-  match op_str with
-  | "LeftConvOp"  -> LeftConvOp
-  | "RightConvOp" -> RightConvOp
-  | "AbsOp"       -> AbsOp
-  | "AppOp"       -> AppOp
-  | "LeftAppOp"   -> LeftAppOp
-  | "RightAppOp"  -> RightAppOp
-  | _ -> UnknownOp
+let str_2_rule rule_str = 
+  match rule_str with
+  | "LeftConvRule"  -> LeftConvRule
+  | "RightConvRule" -> RightConvRule
+  | "AbsRule"       -> AbsRule
+  | "AppRule"       -> AppRule
+  | "LeftAppRule"   -> LeftAppRule
+  | "RightAppRule"  -> RightAppRule
+  | _ -> UnknownRule
 
-let print_op op = print_endline
-(match op with
-  | LeftConvOp -> "Left Alpha Conv"
-  | RightConvOp -> "Right Alpha Conv"
-  | AbsOp -> "Abstraction"
-  | AppOp -> "Application on both side"
+let print_rule rule = print_endline
+(match rule with
+  | LeftConvRule -> "Left Alpha Conv"
+  | RightConvRule -> "Right Alpha Conv"
+  | AbsRule -> "Abstraction"
+  | AppRule -> "Application on both side"
   (* sugar *)
-  | LeftAppOp -> "Left Application"
-  | RightAppOp -> "Right Application"
-  | UnknownOp -> "Unknown"
+  | LeftAppRule -> "Left Application"
+  | RightAppRule -> "Right Application"
+  | UnknownRule -> "Unknown"
 )
 
 let print_error error = print_endline
@@ -256,7 +256,7 @@ let print_error error = print_endline
   | NotImplemented -> "Not implemented branch"
   | NotParseError -> "Parse error" (* how to raise? *)
   | UndefinedError -> "Undefined error"
-  | IllegalOperation -> "Operation is illegal"
+  | WrongRule -> "Rule is wrong"
 
   | LeftConvRightNotSame -> "Right part is not the same"
   | RightConvLeftNotSame -> "Left part is not the same"
