@@ -1,6 +1,6 @@
 (* Use for getting binding relationship from typed lambda term. *)
 (* E.G: Given (%x. (%y.y) x) y, 
- * first convert into typed lambda (by parser lambda_parser):
+ * first convert into typed lambda (by parser lambda_parse):
  * AppLam(
  *   AbsLam(x, (
  *     AppLam(
