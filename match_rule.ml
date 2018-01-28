@@ -160,9 +160,9 @@ let legal_app conclusion hypothesis_list =
     (match (con_left, con_right) with
     | (AppLam(con_left_rator, con_left_rand), AppLam(con_right_rator, con_right_rand)) ->
       if not (same_lambda con_left_rator fst_hypo_left)   then AppLeftRewriteWrong else 
-      if not (same_lambda con_left_rand snd_hypo_left)   then AppLeftRewriteWrong else 
+      if not (same_lambda con_left_rand snd_hypo_left)    then AppLeftRewriteWrong else 
       if not (same_lambda con_right_rator fst_hypo_right) then AppRightRewriteWrong else 
-      if not (same_lambda con_right_rand snd_hypo_right) then AppRightRewriteWrong else 
+      if not (same_lambda con_right_rand snd_hypo_right)  then AppRightRewriteWrong else 
       NoError 
     | _ -> WrongRule 
     )
@@ -173,8 +173,8 @@ let legal_app conclusion hypothesis_list =
 let legal_left_app_helper con_left con_right hypo_left hypo_right = 
   match (con_left, con_right) with
   | (AppLam(con_left_rator, con_left_rand), AppLam(con_right_rator, con_right_rand)) ->
-      if not (same_lambda con_left_rator hypo_left)    then AppLeftRewriteWrong else 
-      if not (same_lambda con_right_rator hypo_right)  then AppLeftRewriteWrong else 
+      if not (same_lambda con_left_rator hypo_left)     then AppLeftRewriteWrong else 
+      if not (same_lambda con_right_rator hypo_right)   then AppLeftRewriteWrong else 
       if not (same_lambda con_left_rand con_right_rand) then LeftAppRightNotSame else
       NoError 
   | _ -> WrongRule 
@@ -183,8 +183,8 @@ let legal_left_app_helper con_left con_right hypo_left hypo_right =
 let legal_right_app_helper con_left con_right hypo_left hypo_right = 
   match (con_left, con_right) with
   | (AppLam(con_left_rator, con_left_rand), AppLam(con_right_rator, con_right_rand)) ->
-      if not (same_lambda con_left_rand hypo_left)    then AppRightRewriteWrong else 
-      if not (same_lambda con_right_rand hypo_right)  then AppRightRewriteWrong else 
+      if not (same_lambda con_left_rand hypo_left)        then AppRightRewriteWrong else 
+      if not (same_lambda con_right_rand hypo_right)      then AppRightRewriteWrong else 
       if not (same_lambda con_left_rator con_right_rator) then RightAppLeftNotSame else 
       NoError 
   | _ -> WrongRule 

@@ -76,7 +76,7 @@ let add_bounded_in_bind_rel bind_list counter id_of_var =
    * i.e. the head of the list_to_scan *)
   let rec helper list_scanned list_to_scan counter id_of_var =  
     match list_to_scan with 
-    | [] -> raise (Failure "This should not happen") (* should be one binding var for the var *)
+    | [] -> raise (Failure "This should not happen") (* the binding var should exists *)
     (* if next is Free, simply skip *)
     | (Free(id, s)) :: xs -> 
         helper (list_scanned @ [Free(id, s)]) xs counter id_of_var 
