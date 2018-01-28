@@ -2,29 +2,18 @@ open Lambda
 open Lambda_parse
 open Match_rule
 
+(* OneStepInput: str * rule * str list *)
 
-let test_onestep str1 rule str2 is_silent =
-  let onestep_input = Match_rule.OneStepInput(str1, rule, [str2]) in
+let test_onestep conclusion_str rule_str hypothesis_list is_silent =
+  let rule = Match_rule.str_2_rule rule_str in
+  let onestep_input = Match_rule.OneStepInput(conclusion_str, rule, hypothesis_list) in
   let res = Match_rule.legal_onestep onestep_input
   in if not is_silent then 
   (
-    print_endline str1;
+    print_endline conclusion_str;
     Match_rule.print_rule rule;
-    print_endline str2;
-    Match_rule.print_error res;
-  )
-  else Match_rule.print_error res
-
-
-let test_onestep_full_app str1 rule str2 str3 is_silent =
-  let onestep_input = Match_rule.OneStepInput(str1, rule, [str2; str3]) in
-  let res = Match_rule.legal_onestep onestep_input
-  in if not is_silent then 
-  (
-    print_endline str1;
-    Match_rule.print_rule rule;
-    print_endline str2;
-    print_endline str3;
+    List.map print_endline hypothesis_list;
+    print_string "Result: ";
     Match_rule.print_error res;
   )
   else Match_rule.print_error res
@@ -38,14 +27,17 @@ let () =
   let ic = open_in file in
     let rec loop () = 
       try 
-        let str1 = input_line ic in  
+        let conclusion_str = input_line ic in  
         let rule_str = input_line ic in
-        let str2 = input_line ic in
-        let expect_res = input_line ic in
-        let skiped_line = input_line ic in
-        let rule = Match_rule.str_2_rule rule_str in
-        print_string "Result: "; 
-        test_onestep str1 rule str2 is_silent; 
+        let line_3 = input_line ic in
+        let line_4 = input_line ic in
+        let line_5 = input_line ic in 
+        let (hypothesis_list, expect_res, skiped_line) = 
+            (if (String.length line_5 < 3) 
+             then ([line_3], line_4, "") 
+             else ([line_3; line_4], line_5, input_line ic))
+        in
+        test_onestep conclusion_str rule_str hypothesis_list is_silent; 
         print_endline ("Expected: " ^ expect_res);
         print_endline "";
         loop ()

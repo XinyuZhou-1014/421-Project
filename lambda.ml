@@ -12,9 +12,10 @@
  * Then convert the lambda type into binding relationship list:
  * [Bind(1, [4], x), Bind(2, [3], y), Free(5, y)] 
  *)
-(* Main function: get_binding_relation lambda_ty   *)
+(* Main function: get_binding_relation lambda_ty *)
 
 open Printf;;
+
 
 type lam = 
   | VarLam of string        (* x *)
@@ -42,6 +43,8 @@ type binding_relation =
 (* counter: count the number of var in the env, and become the index of next var; 
  * also be the identifier of a var if it first appears in the map *)
 
+
+(* helper functions *)
 (* find the variable in map *)
 let rec find_in_map map var = 
   match map with
@@ -133,7 +136,9 @@ let rec get_binding_relation_helper lambda_ty env =
          )
     )
 
+
 (* main function*)
+
 (* init env, get full env after scan the lambda, and return the binding relationship *)
 let get_binding_relation lambda_ty = 
   let env = (0, [], []) in
@@ -142,6 +147,7 @@ let get_binding_relation lambda_ty =
 
 
 (* utils*)
+
 (* return the string of lambda term given lambda type.
  * str_of_lam: use what string to denote "lambda" *)
 let rec string_of_lambda str_of_lam lambda_ty =
