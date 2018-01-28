@@ -34,7 +34,8 @@ let _ =
   print_endline str1; 
   Match_rule.print_rule rule;
   print_endline str2;
-  let res = legal_onestep rule [str1] [str2] in
+  let onestep_input = Match_rule.OneStepInput(str1, rule, [str2]) in
+  let res = Match_rule.legal_onestep onestep_input in
   Match_rule.print_error res;
   
   loop()

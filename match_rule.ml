@@ -9,21 +9,25 @@ type rule =
   | LeftAppRule
   | RightAppRule
   | UnknownRule
-
 (* 
  * rule: type of Rule
- * before_list: have only one element, i.e. "left ~a~ right" string
- * after_list: have one or two elements, each element is a "left ~a~ right" string
+ * conclusion: have only one element, i.e. "left ~a~ right" string
+ * hypothesis_list: have one or two elements, each element is a "left ~a~ right" string
  * rules:
    * a_conv: 1 -> 1
    * abs: 1 -> 1 (lambda term should be equal)
    * app: 1 -> 2
  *)
 
+type onestep_input = 
+  | OneStepInput of string * rule * string list (* conclusion, rule, hypothesis list *)
+
+
 type error = 
   | NoError
   | NotImplemented
   | NotParsedError (* how to raise? *)
+  | NumOfHypoError
   | UndefinedError
   | WrongRule
   | UnNamedError of string
@@ -54,7 +58,6 @@ let parse_exp str =
   | One lam -> raise(Failure "should have two here")
   | Two (left, right) -> (left, right)
 
-
 let can_alpha_conv lam = true
 
 let can_abs lam = match lam with AbsLam _ -> true | _ -> false
@@ -68,21 +71,6 @@ let rec same_lambda e1 e2 = match (e1, e2) with
       s1 = s2 && same_lambda r1 r2
   | (AppLam (l1, r1), AppLam(l2, r2)) ->
       same_lambda l1 l2 && same_lambda r1 r2
-  | (_, _) -> false
-
-(* judge whether two lists are the same *)
-let rec same_list l1 l2 = match (l1, l2) with
-  | ([], []) -> true
-  | (x::xs, y::ys) -> x = y && same_list xs ys
-  | (_, _) -> false
-
-(* judge whether two binding relation lists are the same *)
-let rec same_bind_list l1 l2 = match (l1, l2) with
-  | ([], []) -> true 
-  | (Bind(id_1, bounded_1, str_1)::xs, Bind(id_2, bounded_2, str_2)::ys) -> 
-      id_1 = id_2 && same_list bounded_1 bounded_2 && same_bind_list xs ys
-  | (Free(id_1, s1)::xs, Free(id_2, s2)::ys) ->
-      id_1 = id_2 && s1 = s2 && same_bind_list xs ys
   | (_, _) -> false
 
 (* Count the total number of difference in binding relation list *)
@@ -118,122 +106,128 @@ let is_alpha_conversion lam1 lam2 =
 
 
 (* rules *)
-let legal_left_conv before_list after_list = 
-  match (before_list, after_list) with
-  | (before::[], after::[]) ->
-      (match (parse_exp before, parse_exp after) with
-      | ((lb, rb), (la, ra)) ->
-          if not (can_alpha_conv lb) then WrongRule else 
-          if not (same_lambda rb ra) then LeftConvRightNotSame else 
-          is_alpha_conversion lb la
+let legal_left_conv conclusion hypothesis_list = 
+  match hypothesis_list with
+  | hypothesis::[] ->
+      (match (conclusion, hypothesis) with
+      | ((left_con, right_con), (left_hypo, right_hypo)) ->
+          if not (can_alpha_conv left_con) then WrongRule else 
+          if not (same_lambda right_con right_hypo) then LeftConvRightNotSame else 
+          is_alpha_conversion left_con left_hypo
       | (_, _) -> NotImplemented (* One *)
       )
-  | _ -> NotImplemented (* num uplineterms *)
+  | _ -> NumOfHypoError
 
-let legal_right_conv before_list after_list = 
-  match (before_list, after_list) with
-  | (before::[], after::[]) ->
-      (match (parse_exp before, parse_exp after) with
-      | ((lb, rb), (la, ra)) ->
-          if not (can_alpha_conv rb) then WrongRule else 
-          if not (same_lambda lb la) then RightConvLeftNotSame else 
-          is_alpha_conversion rb ra
+let legal_right_conv conclusion hypothesis_list = 
+  match hypothesis_list with
+  | hypothesis::[] ->
+      (match (conclusion, hypothesis) with
+      | ((left_con, right_con), (left_hypo, right_hypo)) ->
+          if not (can_alpha_conv right_con) then WrongRule else 
+          if not (same_lambda left_con left_hypo) then RightConvLeftNotSame else 
+          is_alpha_conversion right_con right_hypo
       | (_, _) -> NotImplemented (* One *)
       )
-  | _ -> NotImplemented (* num uplineterms *)
+  | _ -> NumOfHypoError
 
 
-let legal_abs_helper lb rb la ra = 
-  match (lb, rb) with
-  | (AbsLam(s_lb, e_lb), AbsLam(s_rb, e_rb)) ->
-      if not (s_lb = s_rb) then LambdaTermNotSame 
-      else if not (same_lambda e_lb la) then AbsRewriteWrong 
-      else if not (same_lambda e_rb ra) then AbsRewriteWrong
+let legal_abs_helper left_con right_con left_hypo right_hypo = 
+  match (left_con, right_con) with
+  | (AbsLam(s_left_con, e_left_con), AbsLam(s_right_con, e_right_con)) ->
+      if not (s_left_con = s_right_con) then LambdaTermNotSame 
+      else if not (same_lambda e_left_con left_hypo) then AbsRewriteWrong 
+      else if not (same_lambda e_right_con right_hypo) then AbsRewriteWrong
       else NoError
   | _ -> WrongRule 
 
-let legal_abs before_list after_list = 
-  match (before_list, after_list) with
-  | (before::[], after::[]) ->
-      (match (parse_exp before, parse_exp after) with
-      | ((lb, rb), (la, ra)) -> 
-          if not (can_abs lb) then WrongRule else 
-          legal_abs_helper lb rb la ra 
+let legal_abs conclusion hypothesis_list = 
+  match hypothesis_list with
+  | hypothesis::[] ->
+      (match (conclusion, hypothesis) with
+      | ((left_con, right_con), (left_hypo, right_hypo)) -> 
+          if not (can_abs left_con) then WrongRule else 
+          legal_abs_helper left_con right_con left_hypo right_hypo 
       | (_, _) -> NotImplemented (* One *)
       )
-  | _ -> NotImplemented (* num uplineterms *)
+  | _ -> NumOfHypoError
 
 
-let legal_app_helper lb rb la1 ra1 la2 ra2 = 
-  match (lb, rb) with
-  | (AppLam(e1_lb, e2_lb), AppLam(e1_rb, e2_rb)) ->
-      if not (same_lambda e1_lb la1) then AppLeftRewriteWrong else 
-      if not (same_lambda e2_lb la2) then AppLeftRewriteWrong else 
-      if not (same_lambda e1_rb ra1) then AppRightRewriteWrong else 
-      if not (same_lambda e2_rb ra2) then AppRightRewriteWrong else 
+let legal_app_helper left_con right_con left_hypo_1 right_hypo_1 left_hypo_2 right_hypo_2 = 
+  match (left_con, right_con) with
+  | (AppLam(e1_left_con, e2_left_con), AppLam(e1_right_con, e2_right_con)) ->
+      if not (same_lambda e1_left_con left_hypo_1) then AppLeftRewriteWrong else 
+      if not (same_lambda e2_left_con left_hypo_2) then AppLeftRewriteWrong else 
+      if not (same_lambda e1_right_con right_hypo_1) then AppRightRewriteWrong else 
+      if not (same_lambda e2_right_con right_hypo_2) then AppRightRewriteWrong else 
       NoError 
   | _ -> WrongRule 
 
-let legal_app before_list after_list = 
-  match (before_list, after_list) with
-  | (before::[], after_1::after_2::[]) ->
-      (match (parse_exp before, parse_exp after_1, parse_exp after_2) with
-      | ((lb, rb), (la1, ra1), (la2, ra2)) -> 
-          legal_app_helper lb rb la1 ra1 la2 ra2
+let legal_app conclusion hypothesis_list = 
+  match hypothesis_list with
+  | hypothesis_1::hypothesis_2::[] ->
+      (match (conclusion, hypothesis_1, hypothesis_2) 
+      with
+      | ((left_con, right_con), (left_hypo_1, right_hypo_1), (left_hypo_2, right_hypo_2)) -> 
+          legal_app_helper left_con right_con left_hypo_1 right_hypo_1 left_hypo_2 right_hypo_2
       | (_, _, _) -> NotImplemented (* One *)
       )
-  | _ -> NotImplemented (* num uplineterms *)
+  | _ -> NumOfHypoError
 
 
-let legal_left_app_helper lb rb la ra = 
-  match (lb, rb) with
-  | (AppLam(e1_lb, e2_lb), AppLam(e1_rb, e2_rb)) ->
-      if not (same_lambda e1_lb la) then AppLeftRewriteWrong else 
-      if not (same_lambda e1_rb ra) then AppLeftRewriteWrong else 
-      if not (same_lambda e2_lb e2_rb) then LeftAppRightNotSame else
+let legal_left_app_helper left_con right_con left_hypo right_hypo = 
+  match (left_con, right_con) with
+  | (AppLam(e1_left_con, e2_left_con), AppLam(e1_right_con, e2_right_con)) ->
+      if not (same_lambda e1_left_con left_hypo) then AppLeftRewriteWrong else 
+      if not (same_lambda e1_right_con right_hypo) then AppLeftRewriteWrong else 
+      if not (same_lambda e2_left_con e2_right_con) then LeftAppRightNotSame else
       NoError 
   | _ -> WrongRule 
 
-let legal_left_app before_list after_list = 
-  match (before_list, after_list) with
-  | (before::[], after::[]) ->
-      (match (parse_exp before, parse_exp after) with
-      | ((lb, rb), (la, ra)) -> 
-          legal_left_app_helper lb rb la ra 
+let legal_left_app conclusion hypothesis_list = 
+  match hypothesis_list with
+  | hypothesis::[] ->
+      (match (conclusion, hypothesis) with
+      | ((left_con, right_con), (left_hypo, right_hypo)) -> 
+          legal_left_app_helper left_con right_con left_hypo right_hypo 
       | (_, _) -> NotImplemented (* One *)
       )
-  | _ -> NotImplemented (* num uplineterms *)
+  | _ -> NumOfHypoError
 
 
-let legal_right_app_helper lb rb la ra = 
-  match (lb, rb) with
-  | (AppLam(e1_lb, e2_lb), AppLam(e1_rb, e2_rb)) ->
-      if not (same_lambda e2_lb la) then AppRightRewriteWrong else 
-      if not (same_lambda e2_rb ra) then AppRightRewriteWrong else 
-      if not (same_lambda e1_lb e1_rb) then RightAppLeftNotSame else 
+let legal_right_app_helper left_con right_con left_hypo right_hypo = 
+  match (left_con, right_con) with
+  | (AppLam(e1_left_con, e2_left_con), AppLam(e1_right_con, e2_right_con)) ->
+      if not (same_lambda e2_left_con left_hypo) then AppRightRewriteWrong else 
+      if not (same_lambda e2_right_con right_hypo) then AppRightRewriteWrong else 
+      if not (same_lambda e1_left_con e1_right_con) then RightAppLeftNotSame else 
       NoError 
   | _ -> WrongRule 
 
-let legal_right_app before_list after_list = 
-  match (before_list, after_list) with
-  | (before::[], after::[]) ->
-      (match (parse_exp before, parse_exp after) with
-      | ((lb, rb), (la, ra)) -> 
-          legal_right_app_helper lb rb la ra 
+let legal_right_app conclusion hypothesis_list = 
+  match hypothesis_list with
+  | hypothesis::[] ->
+      (match (conclusion, hypothesis) with
+      | ((left_con, right_con), (left_hypo, right_hypo)) -> 
+          legal_right_app_helper left_con right_con left_hypo right_hypo 
       | (_, _) -> NotImplemented (* One *)
       )
-  | _ -> NotImplemented (* num uplineterms *)
+  | _ -> NumOfHypoError
 
 
-let legal_onestep rule before_list after_list = 
-  match rule with
-  | LeftConvRule  -> legal_left_conv  before_list after_list
-  | RightConvRule -> legal_right_conv before_list after_list 
-  | AbsRule       -> legal_abs        before_list after_list 
-  | AppRule       -> legal_app        before_list after_list 
-  | LeftAppRule   -> legal_left_app   before_list after_list 
-  | RightAppRule  -> legal_right_app  before_list after_list 
-  | UnknownRule   -> raise(Failure("Invalid Rule")) 
+let legal_onestep onestep_input =
+  (match onestep_input with OneStepInput(con_str, rule, hypo_str_list) -> 
+    let conclusion = parse_exp con_str in 
+    let hypothesis_list = List.map parse_exp hypo_str_list in 
+    (match rule with
+    | LeftConvRule  -> legal_left_conv  conclusion hypothesis_list
+    | RightConvRule -> legal_right_conv conclusion hypothesis_list 
+    | AbsRule       -> legal_abs        conclusion hypothesis_list 
+    | AppRule       -> legal_app        conclusion hypothesis_list 
+    | LeftAppRule   -> legal_left_app   conclusion hypothesis_list 
+    | RightAppRule  -> legal_right_app  conclusion hypothesis_list 
+    | UnknownRule   -> UnNamedError("Invalid Rule")
+    )
+  )
 
 (* utils *)
 let str_2_rule rule_str = 
@@ -250,19 +244,20 @@ let print_rule rule = print_endline
 (match rule with
   | LeftConvRule -> "Left Alpha Conv"
   | RightConvRule -> "Right Alpha Conv"
-  | AbsRule -> "Abstraction"
+  | AbsRule -> "Abstright_hypoction"
   | AppRule -> "Application on both side"
   | LeftAppRule -> "Left Application"
   | RightAppRule -> "Right Application"
-  | UnknownRule -> "Unknown"
+  | UnknownRule -> "Invalid Rule"
 )
 
 let print_error error = print_endline
 (match error with
   | NoError -> "Correct" 
-  | NotImplemented -> "Not implemented branch"
+  | NotImplemented -> "Not implemented bright_hyponch"
   | NotParsedError -> "Parse error" (* how to raise? *)
   | UndefinedError -> "Undefined error"
+  | NumOfHypoError -> "Wrong number of input hypothesis"
   | WrongRule -> "Rule is wrong"
 
   | LeftConvRightNotSame -> "Right part is not the same"
@@ -271,7 +266,7 @@ let print_error error = print_endline
   | AlphaConvNotChange -> "You don't change anything"
   | AlphaConvChangeTooMany -> "Only one veriable change in one step"
 
-  | LambdaTermNotSame  -> "Can't do abstraction: lambda not same"
+  | LambdaTermNotSame  -> "Can't do abstright_hypoction: lambda not same"
   | AbsRewriteWrong -> "Expression rewrite is wrong"
 
   | LeftAppRightNotSame -> "Right part not the same"

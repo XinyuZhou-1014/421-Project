@@ -4,8 +4,8 @@ open Match_rule
 
 
 let test_onestep str1 rule str2 is_silent =
-  let res = 
-    Match_rule.legal_onestep rule [str1] [str2] 
+  let onestep_input = Match_rule.OneStepInput(str1, rule, [str2]) in
+  let res = Match_rule.legal_onestep onestep_input
   in if not is_silent then 
   (
     print_endline str1;
@@ -17,8 +17,8 @@ let test_onestep str1 rule str2 is_silent =
 
 
 let test_onestep_full_app str1 rule str2 str3 is_silent =
-  let res = 
-    Match_rule.legal_onestep rule [str1] [str2; str3] 
+  let onestep_input = Match_rule.OneStepInput(str1, rule, [str2; str3]) in
+  let res = Match_rule.legal_onestep onestep_input
   in if not is_silent then 
   (
     print_endline str1;
