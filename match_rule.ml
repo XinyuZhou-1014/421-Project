@@ -11,6 +11,7 @@ open Lambda_parse;;
 
 
 type rule =
+  | TerminateRule
   | LeftConvRule
   | RightConvRule
   | AbsRule
@@ -124,11 +125,22 @@ let is_alpha_conversion lam1 lam2 =
 let rule_template judge_helper conclusion hypothesis_list =   
   match hypothesis_list with
   | hypothesis::[] ->
-      (match (conclusion, hypothesis) with
-      | ((con_left, con_right), (hypo_left, hypo_right)) -> 
-          judge_helper con_left con_right hypo_left hypo_right
-      | (_, _) -> NotImplemented (* One *)
-      )
+    (match (conclusion, hypothesis) with
+    | ((con_left, con_right), (hypo_left, hypo_right)) -> 
+      judge_helper con_left con_right hypo_left hypo_right
+    | (_, _) -> NotImplemented (* One *)
+    )
+  | _ -> NumOfHypoError
+
+let legal_terminate conclusion hypothesis_list = 
+  match hypothesis_list with 
+  | [] -> 
+    (match conclusion with
+    | (con_left, con_right) -> 
+      if not (same_lambda con_left con_right) then WrongRule else
+      NoError
+    | (_, _) -> NotImplemented (* One *)
+    )
   | _ -> NumOfHypoError
 
 (* correct only if right part unchanged and left part a valid alpha conversion *)
@@ -223,6 +235,7 @@ let legal_onestep onestep_input =
 
 let str_2_rule rule_str = 
   match rule_str with
+  | "TerminateRule"  -> TerminateRule
   | "LeftConvRule"   -> LeftConvRule
   | "RightConvRule"  -> RightConvRule
   | "AbsRule"        -> AbsRule
@@ -234,6 +247,7 @@ let str_2_rule rule_str =
 
 let print_rule rule = print_endline
 (match rule with
+  | TerminateRule  -> "End"
   | LeftConvRule   -> "Left Alpha Conv"
   | RightConvRule  -> "Right Alpha Conv"
   | AbsRule        -> "Absthypo_rightction"
