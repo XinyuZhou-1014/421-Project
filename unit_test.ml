@@ -13,23 +13,18 @@ let is_silent = false
 
 (* put input into OneStepInput, run judge function and print result *)
 let test_onestep conclusion_str rule_str hypothesis_list is_silent = 
-  let rule = Match_rule.str_2_rule rule_str in
-  let onestep_input = Match_rule.OneStepInput(conclusion_str, rule, hypothesis_list) in
-  try 
-    let res = Match_rule.legal_onestep onestep_input
-    in if not is_silent then 
-    (
-      print_endline conclusion_str;
-      Match_rule.print_rule rule;
-      List.map print_endline hypothesis_list;
-      print_string "Result: ";
-      Match_rule.print_error res;
-    )
-    else Match_rule.print_error res
-  with e -> match e with
-  | Parsing.Parse_error -> Match_rule.print_error (Match_rule.NotParsedError)
-  | Failure str -> print_endline str
-  | _ -> raise e
+  let onestep_input = Match_rule.OneStepInput(conclusion_str, rule_str, hypothesis_list) in
+  let res = Match_rule.legal_onestep onestep_input
+  in if not is_silent then 
+  (
+    print_endline conclusion_str;
+    print_endline rule_str;
+    List.map print_endline hypothesis_list;
+    print_string "Result: ";
+    Match_rule.print_error res;
+  )
+  else Match_rule.print_error res
+
 
   
 (* read four or five lines eac time*)

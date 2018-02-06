@@ -33,14 +33,15 @@ type rule =
  *)
 
 type onestep_input = 
-  | OneStepInput of string * rule * string list (* conclusion, rule, hypothesis list *)
+  | OneStepInput of string * string * string list (* conclusion, rule_str, hypothesis list *)
 
 type error = 
   | NoError
   | NotImplemented
-  | NotParsedError (* how to raise? *)
+  | LexingError
+  | ParseError
   | NumOfHypoError
-  | UndefinedError
+  | UndefinedError of exn
   | WrongRule
   | UnNamedError of string
   (* alpha conversion *)
@@ -213,23 +214,6 @@ let legal_transition conclusion hypothesis_list =
   | (conlusion, _::_::[]) -> NotImplemented (* One *)
   | _ -> NumOfHypoError
 
-(* main function *)
-let legal_onestep onestep_input =
-  (match onestep_input with OneStepInput(con_str, rule, hypo_str_list) -> 
-    let conclusion = parse_exp con_str in 
-    let hypothesis_list = List.map parse_exp hypo_str_list in 
-    (match rule with
-    | LeftConvRule   -> rule_template legal_con_leftv_helper  conclusion hypothesis_list
-    | RightConvRule  -> rule_template legal_con_rightv_helper conclusion hypothesis_list 
-    | AbsRule        -> rule_template legal_abs_helper        conclusion hypothesis_list 
-    | AppRule        -> legal_app                             conclusion hypothesis_list 
-    | LeftAppRule    -> rule_template legal_left_app_helper   conclusion hypothesis_list 
-    | RightAppRule   -> rule_template legal_right_app_helper  conclusion hypothesis_list
-    | TransitionRule -> legal_transition                      conclusion hypothesis_list
-    | UnknownRule    -> UnNamedError("Invalid Rule")
-    )
-  )
-
 
 (* utils *)
 
@@ -261,9 +245,10 @@ let print_rule rule = print_endline
 let print_error error = print_endline
 (match error with
   | NoError -> "Correct" 
-  | NotImplemented -> "Not implemented bhypo_rightnch"
-  | NotParsedError -> "Parse error" (* how to raise? *)
-  | UndefinedError -> "Undefined error"
+  | NotImplemented -> "Not implemented"
+  | ParseError -> "Parse error" (* how to raise? *)
+  | LexingError -> "Lexing Error"
+  | UndefinedError e -> raise e; "Undefined error"
   | NumOfHypoError -> "Wrong number of input hypothesis"
   | WrongRule -> "Rule is wrong"
 
@@ -285,3 +270,28 @@ let print_error error = print_endline
  
   | UnNamedError str -> str
 )
+
+
+(* main function *)
+let legal_onestep onestep_input =
+  try
+    (match onestep_input with OneStepInput(con_str, rule_str, hypo_str_list) -> 
+      let rule = str_2_rule rule_str in
+      let conclusion = parse_exp con_str in 
+      let hypothesis_list = List.map parse_exp hypo_str_list in 
+      (match rule with
+      | LeftConvRule   -> rule_template legal_con_leftv_helper  conclusion hypothesis_list
+      | RightConvRule  -> rule_template legal_con_rightv_helper conclusion hypothesis_list 
+      | AbsRule        -> rule_template legal_abs_helper        conclusion hypothesis_list 
+      | AppRule        -> legal_app                             conclusion hypothesis_list 
+      | LeftAppRule    -> rule_template legal_left_app_helper   conclusion hypothesis_list 
+      | RightAppRule   -> rule_template legal_right_app_helper  conclusion hypothesis_list
+      | TransitionRule -> legal_transition                      conclusion hypothesis_list
+      | UnknownRule    -> UnNamedError("Invalid Rule")
+      )
+    )
+  with e -> match e with
+  | Parsing.Parse_error -> ParseError
+  | Failure str -> LexingError
+  | _ -> UndefinedError e
+

@@ -12,6 +12,15 @@
  * Then convert the lambda type into binding relationship list:
  * [Bind(1, [4], x), Bind(2, [3], y), Free(5, y)] 
  *)
+(* To achieve this:
+ * (1) map each variable into a specific identifier (integer), 
+ *     in order to distinguish two variable that share same name 
+ * (2) record variable following lambda as binding variable, 
+ *     all variable map into the same identifier of it as bounded variable,
+ *     all variable not in the map as free variable
+ * (3) recursively do this for exps in abstractions and applications, 
+ *     after each, update the binding relationship but keep the old map relationship   
+ *)
 (* Main function: get_binding_relation lambda_ty *)
 
 open Printf;;
@@ -137,14 +146,6 @@ let rec get_binding_relation_helper lambda_ty env =
     )
 
 
-(* main function*)
-
-(* init env, get full env after scan the lambda, and return the binding relationship *)
-let get_binding_relation lambda_ty = 
-  let env = (0, [], []) in
-  match get_binding_relation_helper lambda_ty env with
-  | (_, bind_list, map) -> bind_list
-
 
 (* utils*)
 
@@ -183,3 +184,12 @@ let rec string_of_lambda_by_type lambda_ty =
          | _ -> string_of_lambda_by_type rator) ^ " " ^
        (match rand with VarLam s -> s
          | _ ->  "("^(string_of_lambda_by_type rand)^")"))
+
+
+(* main function*)
+
+(* init env, get full env after scan the lambda, and return the binding relationship *)
+let get_binding_relation lambda_ty = 
+  let env = (0, [], []) in
+  match get_binding_relation_helper lambda_ty env with
+  | (_, bind_list, map) -> bind_list
