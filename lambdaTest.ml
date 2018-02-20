@@ -1,7 +1,5 @@
-(* File: lambdaTest.ml *)
-(* Author: Elsa L. Gunter *)
-(* Copyright: 2016 *)
-(* Share and Enjoy *)
+(* Interactive Test Environment *)
+(* Input one line as conclusion, one line as rule, and few line(s) as hypothesis *)
 
 open Lambda
 open Lambda_parse
