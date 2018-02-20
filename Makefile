@@ -2,7 +2,7 @@ OCAMLC=ocamlc
 OCAMLLEX=ocamllex
 OCAMLYACC=ocamlyacc 
 OBJLANG=lambda
-SOURCE=lambdaTest
+SOURCE=lambda_test
 INTERACTIVE_EXE=LambdaTest
 
 UNITTEST_SOURCE=unit_test
