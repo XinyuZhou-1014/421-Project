@@ -7,21 +7,33 @@ open Lambda
 open Lambda_parse
 open Match_rule
 
+(* get result *)
+let test_onestep conclusion_str rule_str hypothesis_list = 
+  print_endline conclusion_str;
+  print_endline rule_str;
+  List.map print_endline hypothesis_list;
+  let onestep_input = Match_rule.OneStepInput(conclusion_str, rule_str, hypothesis_list) in
+  let res = Match_rule.legal_onestep onestep_input in
+  print_string "Result: ";
+  Match_rule.print_error res
 
-let rec loop () =
-    (print_endline "> ";
-     let tm = Lambda_parse.input Lambda_lex.token (Lexing.from_channel stdin) in
-     match tm with 
-     | Two (tm1, tm2) ->
-     print_endline (string_of_lambda "%" tm1);
-     print_endline "~a~";
-     print_endline (string_of_lambda "%" tm2);
-     loop()
-     | One tm -> print_endline (string_of_lambda "%" tm);
-                 print_endline (string_of_lambda_by_type tm);
-                 Lambda.print_bind_rel (Lambda.get_binding_relation tm);
-     loop()
-     )
+(* Loop for hypothesis *)
+let rec loop_helper hypothesis_list = 
+  print_endline "Input Hypothesis ('Enter' if finished)> ";
+  let hypo_or_end = input_line stdin in
+  if hypo_or_end = "" then hypothesis_list else
+  let hypothesis_list = hypothesis_list @ [hypo_or_end] in
+  loop_helper hypothesis_list
+
+(* main loop *)
+let rec loop () = 
+  print_endline "\nInput Conclusion> ";
+  let conclusion_str = input_line stdin in
+  print_endline "Input Rule>";
+  let rule_str  = input_line stdin in 
+  let hypothesis_list = loop_helper [] in
+  test_onestep conclusion_str rule_str hypothesis_list
+
 
 let _ = 
   (
@@ -29,14 +41,9 @@ let _ =
   print_endline "Example: ";
   
   let rule_str = "LeftConvRule" in
-  let str1 = "(%x.x (%y.y x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x" in
-  let str2 = "(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x" in
-  print_endline str1; 
-  print_endline rule_str;
-  print_endline str2;
-  let onestep_input = Match_rule.OneStepInput(str1, rule_str, [str2]) in
-  let res = Match_rule.legal_onestep onestep_input in
-  Match_rule.print_error res;
+  let conclusion_str = "(%x.x (%y.y x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x" in
+  let hypothesis = "(%x.x (%w.w x z) w x z) x ~a~ (%y.y(%w.w y z) w y z) x" in
+  test_onestep conclusion_str rule_str [hypothesis];
   
   loop()
   )
