@@ -145,12 +145,12 @@ let legal_terminate conclusion hypothesis_list =
   | _ -> NumOfHypoError
 
 (* correct only if right part unchanged and left part a valid alpha conversion *)
-let legal_con_leftv_helper con_left con_right hypo_left hypo_right = 
+let legal_conv_left_helper con_left con_right hypo_left hypo_right = 
   if not (same_lambda con_right hypo_right) then LeftConvRightNotSame else 
   is_alpha_conversion con_left hypo_left
 
 (* similar as above *)
-let legal_con_rightv_helper con_left con_right hypo_left hypo_right = 
+let legal_conv_right_helper con_left con_right hypo_left hypo_right = 
   if not (same_lambda con_left hypo_left) then RightConvLeftNotSame else 
   is_alpha_conversion con_right hypo_right
 
@@ -280,8 +280,8 @@ let legal_onestep onestep_input =
       let conclusion = parse_exp con_str in 
       let hypothesis_list = List.map parse_exp hypo_str_list in 
       (match rule with
-      | LeftConvRule   -> rule_template legal_con_leftv_helper  conclusion hypothesis_list
-      | RightConvRule  -> rule_template legal_con_rightv_helper conclusion hypothesis_list 
+      | LeftConvRule   -> rule_template legal_conv_left_helper  conclusion hypothesis_list
+      | RightConvRule  -> rule_template legal_conv_right_helper conclusion hypothesis_list 
       | AbsRule        -> rule_template legal_abs_helper        conclusion hypothesis_list 
       | AppRule        -> legal_app                             conclusion hypothesis_list 
       | LeftAppRule    -> rule_template legal_left_app_helper   conclusion hypothesis_list 
