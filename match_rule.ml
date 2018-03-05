@@ -45,11 +45,11 @@ type error =
   | WrongRule
   | UnNamedError of string
   (* alpha conversion *)
+  | AlphaConvTermWrong
   | LeftConvRightNotSame
   | RightConvLeftNotSame
   | AlphaConvWrong
-  | AlphaConvNotChange
-  | AlphaConvChangeTooMany
+  | AlphaConvVariableWrong
   (* abs error *)
   | LambdaTermNotSame 
   | AbsRewriteWrong
@@ -78,6 +78,14 @@ let parse_exp str =
  
 (* higher logic used in the rule judgment *)
 
+
+(* judge whether two lists are the same *)
+let rec same_lists l1 l2 = 
+  match (l1, l2) with
+  | ([], []) -> true 
+  | (x::xs, y::ys) -> if x = y then same_lists xs ys else false
+  | _ -> false
+
 (* judge whether two typed lambda are the same *)
 let rec same_lambda e1 e2 = match (e1, e2) with
   | (VarLam s1, VarLam s2) -> s1 = s2
@@ -87,36 +95,39 @@ let rec same_lambda e1 e2 = match (e1, e2) with
       same_lambda l1 l2 && same_lambda r1 r2
   | (_, _) -> false
 
-(* Count the total number of difference in binding relation list *)
-(* Count += 1 iff two binds have difference only on the name of var *)
-(* Any other difference will lead to None *)
-(* If no other difference, return Some n where n is the total number of difference *)
-(* Use for judge the legal alpha conversion (has only one difference) *)
-let rec count_bind_list_change l1 l2 = match (l1, l2) with
-  | ([], []) -> Some 0
-  | (Bind(id_1, lst1, str_1)::xs, Bind(id_2, bounded_2, str_2)::ys) -> 
-      (match count_bind_list_change xs ys with
-      | None -> None
-      | Some n -> 
-          if not (id_1 = id_2) then None
-          else if str_1 = str_2 then Some n 
-               else Some (n+1)
-      )
-  | (Free(id_1, s1)::xs, Free(id_2, s2)::ys) ->
-      if (id_1 = id_2 && s1 = s2) then count_bind_list_change xs ys
-      else None
-  | (_, _) -> None
 
-(* judge the legal alpha conversion (has only one difference) *)
+(* Check alpha conversion *)
+(* First check the outermost is AbsLam, 
+   then check only the name of the outermost binding variable changes *)
+
+(* all but the first term *)
+let rec alpha_conversion_helper bind_list_1 bind_list_2 = 
+  match (bind_list_1, bind_list_2) with 
+  | ([], []) -> NoError
+  | ((Bind(id_1, bounded_1, str_1)::xs, Bind(id_2, bounded_2, str_2)::ys)) ->
+    if not (id_1 = id_2 && bounded_1 = bounded_2) then AlphaConvWrong else
+    if not (str_1 = str_2) then AlphaConvVariableWrong else
+    alpha_conversion_helper xs ys
+  | (Free(id_1, str_1)::xs, Free(id_2, str_2)::ys) ->
+    if not (id_1 = id_2 && str_1 = str_2) then AlphaConvWrong else
+    alpha_conversion_helper xs ys
+  | _ -> AlphaConvWrong 
+
+(* First check abstraction, then deal with first term, then throw to helper *)
 let is_alpha_conversion lam1 lam2 = 
-  match count_bind_list_change 
-        (Lambda.get_binding_relation lam1) 
-        (Lambda.get_binding_relation lam2)
-  with 
-  | None -> AlphaConvWrong 
-  | Some n -> if n = 1 then NoError else
-              if n = 0 then AlphaConvNotChange else
-              AlphaConvChangeTooMany 
+  match (lam1, lam2) with
+  | (AbsLam(s_, _), AbsLam(_, _)) -> 
+    (match ((Lambda.get_binding_relation lam1),  
+           (Lambda.get_binding_relation lam2))
+     with 
+     | ([], []) -> UnNamedError "System error: nothing in bind list." 
+     | (Bind(id_1, bounded_1, str_1)::xs, Bind(id_2, bounded_2, str_2)::ys) -> 
+       if not (id_1 = 1 && id_2 = 1) then AlphaConvVariableWrong else
+       if not (same_lists bounded_1 bounded_2) then AlphaConvWrong else
+       alpha_conversion_helper xs ys
+     | _ -> AlphaConvWrong
+    )
+  | _ -> AlphaConvTermWrong
 
 
 (* rules *)
@@ -252,13 +263,13 @@ let print_error error = print_endline
   | NumOfHypoError -> "Wrong number of input hypothesis"
   | WrongRule -> "Rule is wrong"
 
+  | AlphaConvTermWrong -> "Alpha conversion only happens on abstraction terms"
   | LeftConvRightNotSame -> "Right part is not the same"
   | RightConvLeftNotSame -> "Left part is not the same"
   | AlphaConvWrong -> "Illegal alpha conversion"
-  | AlphaConvNotChange -> "You don't change anything"
-  | AlphaConvChangeTooMany -> "Only one veriable change in one step"
+  | AlphaConvVariableWrong -> "Alpha conversion only on the outermost variable of abstraction"
 
-  | LambdaTermNotSame  -> "Can't do absthypo_rightction: lambda not same"
+  | LambdaTermNotSame  -> "Binding variable not same, do alpha conversion first"
   | AbsRewriteWrong -> "Expression rewrite is wrong"
 
   | LeftAppRightNotSame -> "Right part not the same"
